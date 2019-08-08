@@ -144,11 +144,18 @@ int main(void)
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
 	/* Load or Create Graphical Data */
-	float imageData[6] =
+	float imageData[] =
 	{//		x		y
 		 -0.5f,	-0.5f,	// point 1
-		 -0.0f,	 0.5f,	// point 2
-		  0.5f,	-0.5f,	// point 3
+		  0.5f,	-0.5f,	// point 2
+		  0.5f,	 0.5f,	// point 3
+		 -0.5f,	 0.5f,	// point 4
+	};
+
+	unsigned int imageIndex[] =
+	{
+		0, 1, 2,		// triangle 1
+		2, 3, 0,		// triangle 2
 	};
 
 	/* Create OpenGL context to use data */
@@ -167,8 +174,20 @@ int main(void)
 	);
 	glEnableVertexAttribArray(0);					//Enable Specified Attrib Array
 
+	unsigned int ibo;								//index ID
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	
+	glBufferData									//Contextualize Index Data
+	(
+		GL_ELEMENT_ARRAY_BUFFER,	//Buffer Type
+		6 * sizeof(unsigned int),	//Size of Buffer
+		imageIndex,					//Data Location
+		GL_STATIC_DRAW				//Draw Type
+	);
+
 	/* Load Data into OpenGL */
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), imageData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), imageData, GL_STATIC_DRAW);
 
 	/* Clear Bindings after use */
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -188,7 +207,7 @@ int main(void)
 		glClear(GL_COLOR_BUFFER_BIT);				//reset framebuffer
 		
 		/* Render here */
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
