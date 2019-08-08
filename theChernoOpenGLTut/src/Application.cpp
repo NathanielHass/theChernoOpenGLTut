@@ -37,12 +37,23 @@ int main(void)
 		  0.5f,	-0.5f,	// point 3
 	};
 
-	/* Format Data for use by OpenGL */
+	/* Create OpenGL context to use data */
 	unsigned int vertexBuffer;						//create ID tag
 	glGenBuffers(1, &vertexBuffer);					//assign memory to tag
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);	//switch OpenGL state to specified buffer
 
-	/* Prepare Data before entering the loop */
+	glVertexAttribPointer							//Contextualize buffer data
+	(
+		0,					//Index number of attribute to be specified
+		2,					//number of data points per attribute
+		GL_FLOAT,			//data type of attribute
+		GL_FALSE,			//normalize data (yes/no)
+		sizeof(float) * 2,	//distance from vertex to vertex
+		0					//distance of attribute from the beginning of the vertex
+	);
+	glEnableVertexAttribArray(0);					//Enable Specified Attrib Array
+	
+	/* Load Data into OpenGL */
 	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), imageData, GL_STATIC_DRAW);
 
 	/* Loop until the user closes the window */
