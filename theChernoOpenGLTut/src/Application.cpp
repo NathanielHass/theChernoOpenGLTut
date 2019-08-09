@@ -6,6 +6,31 @@
 #include <string>
 #include <sstream>
 
+#define ASSERT(x) if (!(x)) __debugbreak();
+#define GLCall(x) GLClearError();\
+	x;\
+	ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+
+/* Call all Error Messages out of the Error Stack */
+static void GLClearError()
+{
+	while (glGetError() != GL_NO_ERROR);
+}
+
+/* Print Error Messages to the console */
+// To refference error numbers,
+// you will have to convert to hexadecimal
+static bool GLLogCall(const char* function, const char* file, int line)
+{
+	while (GLenum error = glGetError())
+	{
+		std::cout	<< "[OpenGL Error] (" << error << "): "
+					<< function << " "
+					<< file << ":"
+					<< line << std::endl;
+		return false;
+	}
+}
 struct ShaderProgramSource
 {
 	std::string VertexSource;
@@ -204,10 +229,12 @@ int main(void)
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
-		glClear(GL_COLOR_BUFFER_BIT);				//reset framebuffer
+		/* Reset Frame Buffer */
+		glClear(GL_COLOR_BUFFER_BIT);
 		
 		/* Render here */
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
+		// GLCall checks OpenGL's error log after running the function
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
