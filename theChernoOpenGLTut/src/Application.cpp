@@ -6,32 +6,9 @@
 #include <string>
 #include <sstream>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-	x;\
-	ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-/* Call all Error Messages out of the Error Stack */
-static void GLClearError()
-{
-	while (glGetError() != GL_NO_ERROR);
-}
-
-/* Print Error Messages to the console */
-// To refference error numbers,
-// you will have to convert to hexadecimal
-static bool GLLogCall(const char* function, const char* file, int line)
-{
-	while (GLenum error = glGetError())
-	{
-		std::cout	<< "[OpenGL Error] (" << error << "): "
-					<< function << " "
-					<< file << ":"
-					<< line << std::endl;
-		return false;
-	}
-	return true;
-}
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 struct ShaderProgramSource
 {
@@ -183,120 +160,96 @@ int main(void)
 
 	/* output OpenGL Version Number in use */
 	std::cout << glGetString(GL_VERSION) << std::endl;
-
-	/* Load or Create Graphical Data */
-	float imageData[] =
-	{//		x		y
-		 -0.5f,	-0.5f,	// point 1
-		  0.5f,	-0.5f,	// point 2
-		  0.5f,	 0.5f,	// point 3
-		 -0.5f,	 0.5f,	// point 4
-	};
-
-	unsigned int imageIndex[] =
 	{
-		0, 1, 2,		// triangle 1
-		2, 3, 0,		// triangle 2
-	};
+		/* Load or Create Graphical Data */
+		float imageData[] =
+		{//		x		y
+			 -0.5f,	-0.5f,	// point 1
+			  0.5f,	-0.5f,	// point 2
+			  0.5f,	 0.5f,	// point 3
+			 -0.5f,	 0.5f,	// point 4
+		};
 
-	/* Create OpenGL context to use data */
-	unsigned int vao;
-	GLCall(glGenVertexArrays(1, &vao));
-	GLCall(glBindVertexArray(vao));
-	
-	unsigned int vertexBuffer;								//create ID tag
-	GLCall(glGenBuffers(1, &vertexBuffer));					//assign memory to tag
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer));	//switch OpenGL state to specified buffer
+		unsigned int imageIndex[] =
+		{
+			0, 1, 2,		// triangle 1
+			2, 3, 0,		// triangle 2
+		};
 
-	GLCall(glVertexAttribPointer							//Contextualize buffer data
-	(
-		0,					//Index number of attribute to be specified
-		2,					//number of data points per attribute
-		GL_FLOAT,			//data type of attribute
-		GL_FALSE,			//normalize data (yes/no)
-		sizeof(float) * 2,	//distance from vertex to vertex
-		0					//distance of attribute from the beginning of the vertex
-	));
-	GLCall(glEnableVertexAttribArray(0));					//Enable Specified Attrib Array
-
-	unsigned int ibo;								//index ID
-	GLCall(glGenBuffers(1, &ibo));
-	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-	
-	GLCall(glBufferData								//Contextualize Index Data
-	(
-		GL_ELEMENT_ARRAY_BUFFER,		//Buffer Type
-		6 * sizeof(unsigned int),	//Size of Buffer
-		imageIndex,						//Data Location
-		GL_STATIC_DRAW					//Draw Type
-	));
-
-	/* Load Data into OpenGL */
-	GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), imageData, GL_STATIC_DRAW));
-
-	/* Clear Bindings after use */
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-	/* Load or Create Shader Data */
-	ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
-
-	/* Compile Shader */
-	unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-	
-	/* Activate Shader */
-	GLCall(glUseProgram(shader));
-
-	/* Set Uniform Data */
-	// Must be done after a shader is attached
-	GLCall(int location = glGetUniformLocation(shader, "u_Color"));
-	ASSERT(location != -1);
-	GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
-
-	float
-		r = 0.0f,
-		g = 0.0f,
-		b = 0.0f,
-		incR = 0.05f,
-		incG = 0.04f,
-		incB = 0.03f;
-
-	/* Clear Current State After Editing */
-	GLCall(glBindVertexArray(0));
-	GLCall(glUseProgram(0));
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-
-	/* Loop until the user closes the window */
-	while (!glfwWindowShouldClose(window))
-	{
-		/* Reset Frame Buffer */
-		GLCall(glClear(GL_COLOR_BUFFER_BIT));
-		
-		/* Render here */
-		GLCall(glUseProgram(shader));
-		GLCall(glUniform4f(location, r, g, b, 1.0f));
-
+		/* Create OpenGL context to use data */
+		unsigned int vao;
+		GLCall(glGenVertexArrays(1, &vao));
 		GLCall(glBindVertexArray(vao));
-		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
 
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-		
-		Bounce(r, incR);
-		Bounce(g, incG);
-		Bounce(b, incB);
-		r += incR;
-		g += incG;
-		b += incB;
+		VertexBuffer vb(imageData, 4 * 2 * sizeof(float));
 
-		/* Swap front and back buffers */
-		glfwSwapBuffers(window);
+		GLCall(glEnableVertexAttribArray(0));
+		GLCall(glVertexAttribPointer							//Contextualize buffer data
+		(
+			0,					//Index number of attribute to be specified
+			2,					//number of data points per attribute
+			GL_FLOAT,			//data type of attribute
+			GL_FALSE,			//normalize data (yes/no)
+			sizeof(float) * 2,	//distance from vertex to vertex
+			0					//distance of attribute from the beginning of the vertex
+		));
 
-		/* Poll for and process events */
-		glfwPollEvents();
+		IndexBuffer ib(imageIndex, 6);
+
+		ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
+
+		/* Compile Shader */
+		unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
+
+		/* Activate Shader */
+		GLCall(glUseProgram(shader));
+
+		/* Set Uniform Data */
+		// Must be done after a shader is attached
+		GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+		ASSERT(location != -1);
+		GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
+
+		float
+			r = 0.0f,
+			g = 0.0f,
+			b = 0.0f,
+			incR = 0.05f,
+			incG = 0.04f,
+			incB = 0.03f;
+
+		/* Loop until the user closes the window */
+		while (!glfwWindowShouldClose(window))
+		{
+			/* Reset Frame Buffer */
+			GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+			/* Render here */
+			GLCall(glUseProgram(shader));
+			GLCall(glUniform4f(location, r, g, b, 1.0f));
+
+			GLCall(glBindVertexArray(vao));
+			ib.Bind();
+
+			GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+			Bounce(r, incR);
+			Bounce(g, incG);
+			Bounce(b, incB);
+			r += incR;
+			g += incG;
+			b += incB;
+
+			/* Swap front and back buffers */
+			glfwSwapBuffers(window);
+
+			/* Poll for and process events */
+			glfwPollEvents();
+		}
+
+		/* Free Used Memory */
+		GLCall(glDeleteProgram(shader));
 	}
-
-	/* Free Used Memory */
-	GLCall(glDeleteProgram(shader));
 
 	/* Shutdown GLFW and exit program */
 	glfwTerminate();
