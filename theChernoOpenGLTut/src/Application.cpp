@@ -30,7 +30,9 @@ static bool GLLogCall(const char* function, const char* file, int line)
 					<< line << std::endl;
 		return false;
 	}
+	return true;
 }
+
 struct ShaderProgramSource
 {
 	std::string VertexSource;
@@ -79,36 +81,36 @@ static ShaderProgramSource ParseShader(const std::string& filepath)
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
 	/* Create id for shader storage */
-	unsigned int id = glCreateShader(type);
+	GLCall(unsigned int id = glCreateShader(type));
 	
 	/* Obtain pure string location */
 	const char* src = source.c_str();
 
 	/* load source code into OpenGL */
-	glShaderSource(id, 1, &src, nullptr);
+	GLCall(glShaderSource(id, 1, &src, nullptr));
 
 	/* Compile Shader */
-	glCompileShader(id);
+	GLCall(glCompileShader(id));
 
 	/* Check for Compiler Errors */
 	int result;
-	glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+	GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
 
 	/* Handle Errors */
 	if (result == GL_FALSE)
 	{
 		/* Read in Error Message */
 		int length;
-		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+		GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
 		char* message = (char*)alloca(length * sizeof(char)); //alloca is a function for allocating memory on the stack
-		glGetShaderInfoLog(id, length, &length, message);
+		GLCall(glGetShaderInfoLog(id, length, &length, message));
 		
 		/* Print Error */
 		std::cout	<< "failed to compile "
 					<< (type == GL_VERTEX_SHADER ? "vertex" : "fragment")
 					<< " shader!" << std::endl;
 		std::cout << message << std::endl;
-		glDeleteShader(id);
+		GLCall(glDeleteShader(id));
 		return 0;
 	}
 
@@ -120,26 +122,32 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 static unsigned int CreateShader(const std::string& vertexShader, const std::string & fragmentShader)
 {
 	/* Create ids for shader components */
-	unsigned int program = glCreateProgram();								//Final Shader Program
-	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);		//vertex Shader
-	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);	//fragment Shader
+	GLCall(unsigned int program = glCreateProgram());								//Final Shader Program
+	GLCall(unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader));		//vertex Shader
+	GLCall(unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader));	//fragment Shader
 
 	/* Associate Shaders with program */
-	glAttachShader(program, vs);
-	glAttachShader(program, fs);
+	GLCall(glAttachShader(program, vs));
+	GLCall(glAttachShader(program, fs));
 
 	/* Link Shaders together */
-	glLinkProgram(program);
+	GLCall(glLinkProgram(program));
 
 	/* Validate Program */
-	glValidateProgram(program);
+	GLCall(glValidateProgram(program));
 
 	/* Clear Temporary files */
-	glDeleteShader(vs);
-	glDeleteShader(fs);
+	GLCall(glDeleteShader(vs));
+	GLCall(glDeleteShader(fs));
 
 	/* return program id */
 	return program;
+}
+
+static void Bounce(float& colour, float& increment)
+{
+	if (colour > 1.0f || colour < 0.0f)
+		increment = -increment;
 }
 
 int main(void)
@@ -160,6 +168,9 @@ int main(void)
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
+
+	/* Lock Framerate */
+	glfwSwapInterval(1);
 
 	/* Check for errors in glewinit before proceeding */
 	if (glewInit() != GLEW_OK)
@@ -184,11 +195,11 @@ int main(void)
 	};
 
 	/* Create OpenGL context to use data */
-	unsigned int vertexBuffer;						//create ID tag
-	glGenBuffers(1, &vertexBuffer);					//assign memory to tag
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);	//switch OpenGL state to specified buffer
+	unsigned int vertexBuffer;								//create ID tag
+	GLCall(glGenBuffers(1, &vertexBuffer));					//assign memory to tag
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer));	//switch OpenGL state to specified buffer
 
-	glVertexAttribPointer							//Contextualize buffer data
+	GLCall(glVertexAttribPointer							//Contextualize buffer data
 	(
 		0,					//Index number of attribute to be specified
 		2,					//number of data points per attribute
@@ -196,26 +207,26 @@ int main(void)
 		GL_FALSE,			//normalize data (yes/no)
 		sizeof(float) * 2,	//distance from vertex to vertex
 		0					//distance of attribute from the beginning of the vertex
-	);
-	glEnableVertexAttribArray(0);					//Enable Specified Attrib Array
+	));
+	GLCall(glEnableVertexAttribArray(0));					//Enable Specified Attrib Array
 
 	unsigned int ibo;								//index ID
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	GLCall(glGenBuffers(1, &ibo));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
 	
-	glBufferData									//Contextualize Index Data
+	GLCall(glBufferData								//Contextualize Index Data
 	(
 		GL_ELEMENT_ARRAY_BUFFER,	//Buffer Type
 		6 * sizeof(unsigned int),	//Size of Buffer
 		imageIndex,					//Data Location
 		GL_STATIC_DRAW				//Draw Type
-	);
+	));
 
 	/* Load Data into OpenGL */
-	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), imageData, GL_STATIC_DRAW);
+	GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), imageData, GL_STATIC_DRAW));
 
 	/* Clear Bindings after use */
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	/* Load or Create Shader Data */
 	ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
@@ -224,17 +235,36 @@ int main(void)
 	unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
 	
 	/* Activate Shader */
-	glUseProgram(shader);
+	GLCall(glUseProgram(shader));
 
+	/* Set Uniform Data */
+	// Must be done after a shader is attached
+	GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+	ASSERT(location != -1);
+	GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
+
+	float
+		r = 0.0f,
+		g = 0.0f,
+		b = 0.0f,
+		incR = 0.05f,
+		incG = 0.04f,
+		incB = 0.03f;
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Reset Frame Buffer */
-		glClear(GL_COLOR_BUFFER_BIT);
+		GLCall(glClear(GL_COLOR_BUFFER_BIT));
 		
 		/* Render here */
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
-		// GLCall checks OpenGL's error log after running the function
+		GLCall(glUniform4f(location, r, g, b, 1.0f));
+		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+		Bounce(r, incR);
+		Bounce(g, incG);
+		Bounce(b, incB);
+		r += incR;
+		g += incG;
+		b += incB;
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
@@ -244,7 +274,7 @@ int main(void)
 	}
 
 	/* Free Used Memory */
-	glDeleteProgram(shader);
+	GLCall(glDeleteProgram(shader));
 
 	/* Shutdown GLFW and exit program */
 	glfwTerminate();
