@@ -158,6 +158,11 @@ int main(void)
 	if (!glfwInit())
 		return -1;
 
+	/* Specify OpenGL Version and Mode */
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
 	/* Create a windowed mode window and its OpenGL context */
 	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
 	if (!window)
@@ -195,6 +200,10 @@ int main(void)
 	};
 
 	/* Create OpenGL context to use data */
+	unsigned int vao;
+	GLCall(glGenVertexArrays(1, &vao));
+	GLCall(glBindVertexArray(vao));
+	
 	unsigned int vertexBuffer;								//create ID tag
 	GLCall(glGenBuffers(1, &vertexBuffer));					//assign memory to tag
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer));	//switch OpenGL state to specified buffer
@@ -216,14 +225,14 @@ int main(void)
 	
 	GLCall(glBufferData								//Contextualize Index Data
 	(
-		GL_ELEMENT_ARRAY_BUFFER,	//Buffer Type
+		GL_ELEMENT_ARRAY_BUFFER,		//Buffer Type
 		6 * sizeof(unsigned int),	//Size of Buffer
-		imageIndex,					//Data Location
-		GL_STATIC_DRAW				//Draw Type
+		imageIndex,						//Data Location
+		GL_STATIC_DRAW					//Draw Type
 	));
 
 	/* Load Data into OpenGL */
-	GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), imageData, GL_STATIC_DRAW));
+	GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), imageData, GL_STATIC_DRAW));
 
 	/* Clear Bindings after use */
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
@@ -250,6 +259,13 @@ int main(void)
 		incR = 0.05f,
 		incG = 0.04f,
 		incB = 0.03f;
+
+	/* Clear Current State After Editing */
+	GLCall(glBindVertexArray(0));
+	GLCall(glUseProgram(0));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -257,8 +273,14 @@ int main(void)
 		GLCall(glClear(GL_COLOR_BUFFER_BIT));
 		
 		/* Render here */
+		GLCall(glUseProgram(shader));
 		GLCall(glUniform4f(location, r, g, b, 1.0f));
+
+		GLCall(glBindVertexArray(vao));
+		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+		
 		Bounce(r, incR);
 		Bounce(g, incG);
 		Bounce(b, incB);
