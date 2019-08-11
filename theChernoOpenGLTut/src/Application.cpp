@@ -9,6 +9,7 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 
 static void Bounce(float& colour, float& increment)
 {
@@ -52,11 +53,11 @@ int main(void)
 	{
 		/* Load or Create Graphical Data */
 		float imageData[] =
-		{//		x		y
-			 -0.5f,	-0.5f,	// point 1
-			  0.5f,	-0.5f,	// point 2
-			  0.5f,	 0.5f,	// point 3
-			 -0.5f,	 0.5f,	// point 4
+		{//		x		y		u		v
+			 -0.5f,	-0.5f,	 0.0f,	 0.0f,	// point 1
+			  0.5f,	-0.5f,	 1.0f,	 0.0f,	// point 2
+			  0.5f,	 0.5f,	 1.0f,	 1.0f,	// point 3
+			 -0.5f,	 0.5f,	 0.0f,	 1.0f,// point 4
 		};
 
 		unsigned int imageIndex[] =
@@ -65,10 +66,14 @@ int main(void)
 			2, 3, 0,		// triangle 2
 		};
 
+		GLCall(glEnable(GL_BLEND));
+		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
 		VertexArray va;
-		VertexBuffer vb(imageData, 4 * 2 * sizeof(float));
+		VertexBuffer vb(imageData, 4 * 4 * sizeof(float));
 
 		VertexBufferLayout layout;
+		layout.Push<float>(2);
 		layout.Push<float>(2);
 		va.AddBuffer(vb, layout);
 
@@ -78,6 +83,11 @@ int main(void)
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 0.1f);
 
+		Texture texture("res/textures/sigilGreenTransparent.png");
+		texture.Bind();
+		shader.SetUniform1i("u_Texture", 0);
+
+
 		va.Unbind();
 		shader.Unbind();
 		vb.Unbind();
@@ -85,14 +95,9 @@ int main(void)
 
 		Renderer renderer;
 
-		float
-			r = 0.0f,
-			g = 0.0f,
-			b = 0.0f,
-			incR = 0.05f,
-			incG = 0.04f,
-			incB = 0.03f;
-
+		float color[3] = { 0 };
+		float increment[3] = { 0.05f, 0.04f, 0.03f };
+			
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
@@ -100,16 +105,15 @@ int main(void)
 			renderer.Clear();
 
 			shader.Bind();
-			shader.SetUniform4f("u_Color", r, g, b, 1.0f);
+			shader.SetUniform4f("u_Color", color[0], color[1], color[2], 1.0f);
 
 			renderer.Draw(va, ib, shader);
 
-			Bounce(r, incR);
-			Bounce(g, incG);
-			Bounce(b, incB);
-			r += incR;
-			g += incG;
-			b += incB;
+			for (int i = 0; i < 3; i++)
+			{
+				Bounce(color[i], increment[i]);
+				color[i] += increment[i];
+			}
 
 			/* Swap front and back buffers */
 			glfwSwapBuffers(window);
