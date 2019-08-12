@@ -11,6 +11,9 @@
 #include "Shader.h"
 #include "Texture.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 static void Bounce(float& colour, float& increment)
 {
 	if (colour > 1.0f || colour < 0.0f)
@@ -79,9 +82,12 @@ int main(void)
 
 		IndexBuffer ib(imageIndex, 6);
 
+		glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 0.1f);
+		shader.SetUniformMat4f("u_MVP", proj);
 
 		Texture texture("res/textures/sigilGreenTransparent.png");
 		texture.Bind();
@@ -96,7 +102,7 @@ int main(void)
 		Renderer renderer;
 
 		float color[3] = { 0 };
-		float increment[3] = { 0.05f, 0.04f, 0.03f };
+		float increment[3] = { 0.09f, 0.06f, 0.03f };
 			
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
