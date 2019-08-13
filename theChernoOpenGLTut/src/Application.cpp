@@ -14,6 +14,9 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw_gl3.h"
+
 static void Bounce(float& colour, float& increment)
 {
 	if (colour > 1.0f || colour < 0.0f)
@@ -84,13 +87,11 @@ int main(void)
 
 		glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
 		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, 200, 0));
+		glm::mat4 model;
+		glm::mat4 mvp;
 
-		glm::mat4 mvp = proj * view * model;
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
-		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 0.1f);
-		shader.SetUniformMat4f("u_MVP", mvp);
 
 		Texture texture("res/textures/sigilGreenTransparent.png");
 		texture.Bind();
@@ -104,16 +105,27 @@ int main(void)
 
 		Renderer renderer;
 
+		ImGui::CreateContext();
+		ImGui_ImplGlfwGL3_Init(window, true);
+		ImGui::StyleColorsDark();
+
 		float color[3] = { 0 };
 		float increment[3] = { 0.09f, 0.06f, 0.03f };
-			
+
+		glm::vec3 translation(200.0f, 200.0f, 0.0f);
+		
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
 			/* Render here */
 			renderer.Clear();
+			ImGui_ImplGlfwGL3_NewFrame();
+
+			model = glm::translate(glm::mat4(1.0f), translation);
+			mvp = proj * view * model;
 
 			shader.Bind();
+			shader.SetUniformMat4f("u_MVP", mvp);
 			shader.SetUniform4f("u_Color", color[0], color[1], color[2], 1.0f);
 
 			renderer.Draw(va, ib, shader);
@@ -124,6 +136,11 @@ int main(void)
 				color[i] += increment[i];
 			}
 
+			ImGui::SliderFloat2("Translation", &translation.x, 0.0f, 960.0f);
+
+			ImGui::Render();
+			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+
 			/* Swap front and back buffers */
 			glfwSwapBuffers(window);
 
@@ -131,6 +148,10 @@ int main(void)
 			glfwPollEvents();
 		}
 	}
+
+	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui::DestroyContext();
+	glfwTerminate();
 
 	/* Shutdown GLFW and exit program */
 	glfwTerminate();
