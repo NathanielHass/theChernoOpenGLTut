@@ -60,10 +60,10 @@ int main(void)
 		/* Load or Create Graphical Data */
 		float imageData[] =
 		{
-			100.0f, 100.0f, 0.0f, 0.0f,
-			200.0f, 100.0f, 1.0f, 0.0f,
-			200.0f, 200.0f, 1.0f, 1.0f,
-			100.0f, 200.0f, 0.0f, 1.0f,
+			-100.0f, -100.0f, 0.0f, 0.0f,
+			 100.0f, -100.0f, 1.0f, 0.0f,
+			 100.0f,  100.0f, 1.0f, 1.0f,
+			-100.0f,  100.0f, 0.0f, 1.0f,
 		};
 
 		unsigned int imageIndex[] =
@@ -86,14 +86,14 @@ int main(void)
 		IndexBuffer ib(imageIndex, 6);
 
 		glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+		glm::mat4 view(1.0f);
 		glm::mat4 model;
 		glm::mat4 mvp;
 
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
 
-		Texture texture("res/textures/sigilGreenTransparent.png");
+		Texture texture("res/textures/Sigil.png");
 		texture.Bind();
 		shader.SetUniform1i("u_Texture", 0);
 
@@ -112,7 +112,8 @@ int main(void)
 		float color[3] = { 0 };
 		float increment[3] = { 0.09f, 0.06f, 0.03f };
 
-		glm::vec3 translation(200.0f, 200.0f, 0.0f);
+		glm::vec3 pos1(0.0f);
+		glm::vec3 pos2(0.0f);
 		
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
@@ -121,14 +122,27 @@ int main(void)
 			renderer.Clear();
 			ImGui_ImplGlfwGL3_NewFrame();
 
-			model = glm::translate(glm::mat4(1.0f), translation);
-			mvp = proj * view * model;
+			shader.Bind();
+			{
+				model = glm::translate(glm::mat4(1.0f), pos1);
+				mvp = proj * view * model;
+
+				shader.SetUniformMat4f("u_MVP", mvp);
+				shader.SetUniform4f("u_Color", color[0], color[1], color[2], 1.0f);
+
+				renderer.Draw(va, ib, shader);
+			}
 
 			shader.Bind();
-			shader.SetUniformMat4f("u_MVP", mvp);
-			shader.SetUniform4f("u_Color", color[0], color[1], color[2], 1.0f);
+			{
+				model = glm::translate(glm::mat4(1.0f), pos2);
+				mvp = proj * view * model;
 
-			renderer.Draw(va, ib, shader);
+				shader.SetUniformMat4f("u_MVP", mvp);
+				shader.SetUniform4f("u_Color", color[0], color[1], color[2], 1.0f);
+
+				renderer.Draw(va, ib, shader);
+			}
 
 			for (int i = 0; i < 3; i++)
 			{
@@ -136,7 +150,8 @@ int main(void)
 				color[i] += increment[i];
 			}
 
-			ImGui::SliderFloat2("Translation", &translation.x, 0.0f, 960.0f);
+			ImGui::SliderFloat2("Translation A", &pos1.x, 0.0f, 1000.0f);
+			ImGui::SliderFloat2("Translation B", &pos2.x, 0.0f, 1000.0f);
 
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());

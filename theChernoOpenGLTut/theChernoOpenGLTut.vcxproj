@@ -562,8 +562,7 @@
     <ClInclude Include="src\VertexBufferLayout.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\textures\sigilGreen.png" />
-    <Image Include="res\textures\sigilGreenTransparent.png" />
+    <Image Include="res\textures\Sigil.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
