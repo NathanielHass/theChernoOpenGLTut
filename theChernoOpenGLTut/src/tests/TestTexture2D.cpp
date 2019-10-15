@@ -17,10 +17,10 @@ namespace test
 	{
 		float imageData[] =
 		{
-			-50.0f, -50.0f, 0.0f, 0.0f,
-			 50.0f, -50.0f, 1.0f, 0.0f,
-			 50.0f,  50.0f, 1.0f, 1.0f,
-			-50.0f,  50.0f, 0.0f, 1.0f,
+			-100.0f, -100.0f, 0.0f, 0.0f,
+			 100.0f, -100.0f, 1.0f, 0.0f,
+			 100.0f,  100.0f, 1.0f, 1.0f,
+			-100.0f,  100.0f, 0.0f, 1.0f,
 		};
 
 		unsigned int imageIndex[] =
@@ -44,6 +44,7 @@ namespace test
 
 		m_Shader = std::make_unique<Shader>("res/shaders/Basic.shader");
 		m_Shader->Bind();
+		m_Shader->SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
 		m_Texture = std::make_unique<Texture>("res/textures/Sigil.png");
 		m_Shader->SetUniform1i("u_Texture", 0);
 	}
